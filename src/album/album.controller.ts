@@ -7,10 +7,14 @@ import {
   Delete,
   Controller,
   ParseIntPipe,
+  UploadedFiles,
+  UseInterceptors
 } from '@nestjs/common';
 import { AlbumService } from './album.service';
 import { AddAlbumDto } from './dto/addAlbumDto';
 import { UpdateAlbumDto } from './dto/updateAlbumDto';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+
 
 @Controller('album')
 export class AlbumController {
@@ -45,4 +49,18 @@ export class AlbumController {
   listarAlbunsDoUtilizador(@Body('nome') nome: string) {
     return this.albumService.listarAlbunsDoUtilizador(nome);
   }
+
+  @Post('adicionarFotosAoAlbum/:albumId/:catalogoId')
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'photos', maxCount: 10 },
+  ]))
+  adicionarFotosAoAlbum(
+    @Param('albumId', ParseIntPipe) albumId: number,
+    @Param('catalogoId', ParseIntPipe) catalogoId: number,
+    @UploadedFiles() photos: { photos: Express.Multer.File[] }
+  ) {
+    return this.albumService.adicionarFotosAoAlbum(albumId, photos.photos, catalogoId);
+  }
+
+
 }

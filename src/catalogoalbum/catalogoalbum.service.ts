@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AddCatalogoAlbumDto } from './dto/addCatalogoAlbumDto';
 import { UpdateCatalogoAlbumDto } from './dto/updateCatalogoAlbumDto';
+import axios from 'axios';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -51,4 +52,57 @@ export class CatalogoAlbumService {
 
     return catalogoalbuns;
   }
+
+  async verAlbum(albumId: number) {
+    try {
+      // Obter todos os catálogos associados ao álbum
+      const catalogosAlbum = await this.prisma.catalogAlbum.findMany({
+        where: {
+          fkalbum: albumId,
+        },
+        select: {
+          url: true,
+        },
+      });
+
+      if (!catalogosAlbum || catalogosAlbum.length === 0) {
+        throw new Error(`Nenhum catálogo encontrado para o álbum com ID ${albumId}.`);
+      }
+
+      // Obter todas as fotos dos arquivos associados aos catálogos
+      const fotos = await Promise.all(
+        catalogosAlbum.map(async (catalogo) => this.obterFotosDoArquivo(catalogo.url))
+      );
+
+      // Flatten a matriz de matrizes em uma única matriz
+      const todasAsFotos = fotos.flat();
+
+      return todasAsFotos;
+    } catch (error) {
+      throw new Error(`Erro ao visualizar o álbum: ${error.message}`);
+    }
+
+  }
+
+  async obterFotosDoArquivo(urlArquivo: string) {
+    try {
+      // Fazer uma requisição HTTP para obter o conteúdo do arquivo de texto
+      const resposta = await axios.get(urlArquivo);
+
+      if (resposta.status !== 200) {
+        throw new Error(`Falha ao obter o conteúdo do arquivo. Código de status: ${resposta.status}`);
+      }
+
+      // O conteúdo do arquivo é a resposta.data
+      const conteudoArquivo = resposta.data;
+
+      // Processar o conteúdo para obter os links das fotos
+      const linksFotos = conteudoArquivo.split('\n').map((link) => link.trim());
+
+      return linksFotos;
+    } catch (error) {
+      throw new Error(`Erro ao obter fotos do arquivo: ${error.message}`);
+    }
+  }
+
 }
