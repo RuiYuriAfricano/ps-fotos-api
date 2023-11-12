@@ -11,17 +11,14 @@ model utilizador {
   codutilizador Int            @id @default(autoincrement())
   nome          String         @unique
   password      String
+  sessionId     String
   catalogAlbum  catalogAlbum[]
-
-  @@map("utilizador_table") // Especifica o nome da tabela explicitamente
 }
 
 model album {
   codalbum     Int            @id @default(autoincrement())
   nome         String         @unique
   catalogAlbum catalogAlbum[]
-
-  @@map("album_table") // Especifica o nome da tabela explicitamente
 }
 
 model catalogAlbum {
@@ -32,6 +29,4 @@ model catalogAlbum {
 
   utilizador utilizador? @relation(fields: [fkutilizador], references: [codutilizador])
   album      album?      @relation(fields: [fkalbum], references: [codalbum])
-
-  @@map("catalog_album_table") // Especifica o nome da tabela explicitamente
 }

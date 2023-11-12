@@ -20,7 +20,7 @@ export class AlbumService {
 
     const album = await this.prisma.album.update({
       where: {
-        id: data.codalbum,
+        codalbum: data.codalbum,
       },
       data,
     });
@@ -30,7 +30,7 @@ export class AlbumService {
 
   async remove(id: number) {
     const response = await this.prisma.album.delete({
-      where: { id },
+      where: { codalbum: id },
     });
 
     return response;
@@ -39,7 +39,7 @@ export class AlbumService {
   async getOne(id: number) {
     const album = await this.prisma.album.findUnique({
       where: {
-        id,
+        codalbum: id,
       },
     });
 

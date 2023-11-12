@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-import { UserModule } from './user/user.module';
-import { VoterModule } from './voter/voter.module';
+import { AlbumModule } from './album/album.module';
+import { CatalogoAlbumModule } from './catalogoalbum/catalogoalbum.module';
+import { UtilizadorModule } from './utilizador/utilizador.module';
 import { PrismaService } from './prisma/prisma.service';
-import { CandidateModule } from './candidate/candidate.module';
-import { ElectionModule } from './election/election.module';
 
 @Module({
-  imports: [UserModule, VoterModule, CandidateModule, ElectionModule],
+  imports: [AlbumModule, CatalogoAlbumModule, UtilizadorModule],
   providers: [PrismaService],
 })
 export class AppModule { }

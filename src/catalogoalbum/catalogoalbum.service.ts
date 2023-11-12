@@ -8,7 +8,7 @@ export class CatalogoAlbumService {
   constructor(private prisma: PrismaService) { }
 
   async add(data: AddCatalogoAlbumDto) {
-    const catalogoalbum = await this.prisma.catalogoAlbum.create({
+    const catalogoalbum = await this.prisma.catalogAlbum.create({
       data,
     });
     return catalogoalbum;
@@ -18,9 +18,9 @@ export class CatalogoAlbumService {
   async update(data: UpdateCatalogoAlbumDto) {
     data.codcatalogo = Number(data?.codcatalogo);
 
-    const catalogoalbum = await this.prisma.catalogoAlbum.update({
+    const catalogoalbum = await this.prisma.catalogAlbum.update({
       where: {
-        id: data.codcatalogo,
+        codcatalogo: data.codcatalogo,
       },
       data,
     });
@@ -29,17 +29,17 @@ export class CatalogoAlbumService {
   }
 
   async remove(id: number) {
-    const response = await this.prisma.catalogoAlbum.delete({
-      where: { id },
+    const response = await this.prisma.catalogAlbum.delete({
+      where: { codcatalogo: id },
     });
 
     return response;
   }
 
   async getOne(id: number) {
-    const catalogoalbum = await this.prisma.catalogoAlbum.findUnique({
+    const catalogoalbum = await this.prisma.catalogAlbum.findUnique({
       where: {
-        id,
+        codcatalogo: id,
       },
     });
 
@@ -47,7 +47,7 @@ export class CatalogoAlbumService {
   }
 
   async getAll() {
-    const catalogoalbuns = await this.prisma.catalogoAlbum.findMany();
+    const catalogoalbuns = await this.prisma.catalogAlbum.findMany();
 
     return catalogoalbuns;
   }
