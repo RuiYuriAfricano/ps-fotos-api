@@ -46,6 +46,23 @@ export class AlbumService {
     return album;
   }
 
+  async listarAlbunsDoUtilizador(nome: string) {
+    const albuns = await this.prisma.utilizador.findUnique({
+      where: {
+        nome: nome,
+      },
+      select: {
+        catalogAlbum: {
+          select: {
+            album: true,
+          },
+        },
+      },
+    });
+
+    return albuns?.catalogAlbum?.map((item) => item.album) || [];
+  }
+
   async getAll() {
     const albuns = await this.prisma.album.findMany();
 

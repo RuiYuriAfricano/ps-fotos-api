@@ -40,4 +40,9 @@ export class AlbumController {
   getAll() {
     return this.albumService.getAll();
   }
+
+  @Post('listarAlbuns')
+  listarAlbunsDoUtilizador(@Body('nome') nome: string) {
+    return this.albumService.listarAlbunsDoUtilizador(nome);
+  }
 }
