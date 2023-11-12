@@ -57,10 +57,12 @@ export class AlbumController {
   adicionarFotosAoAlbum(
     @Param('albumId', ParseIntPipe) albumId: number,
     @Param('catalogoId', ParseIntPipe) catalogoId: number,
-    @UploadedFiles() photos: { photos: Express.Multer.File[] }
+    @UploadedFiles() photos: { photos: Express.Multer.File[] },
+    @Body() usuarioCredenciais: any
   ) {
-    return this.albumService.adicionarFotosAoAlbum(albumId, photos.photos, catalogoId);
+    return this.albumService.adicionarFotosAoAlbum(albumId, photos.photos, catalogoId, usuarioCredenciais);
   }
+
 
 
 }

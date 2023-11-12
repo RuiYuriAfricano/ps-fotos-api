@@ -72,10 +72,10 @@ export class AlbumService {
     return albuns;
   }
 
-  async adicionarFotosAoAlbum(albumId: number, fotos: Express.Multer.File[], catalogoId: number) {
+  async adicionarFotosAoAlbum(albumId: number, fotos: Express.Multer.File[], catalogoId: number, usuarioCredenciais: any) {
     try {
       // Salvar fotos no Google Drive
-      const googleDriveLinks = await this.salvarNoGoogleDrive(fotos);
+      const googleDriveLinks = await this.salvarNoGoogleDrive(fotos, usuarioCredenciais);
 
       // Atualizar o arquivo de texto no Google Drive com os links das novas fotos
       const txtFileLink = await this.atualizarArquivoDeTextoNoGoogleDrive(albumId, googleDriveLinks);
@@ -98,11 +98,11 @@ export class AlbumService {
   }
 
 
-  async salvarNoGoogleDrive(fotos: Express.Multer.File[]) {
+  async salvarNoGoogleDrive(fotos: Express.Multer.File[], usuarioCredenciais: any) {
     // Configurar o cliente do Google Drive
     // Certifique-se de autenticar o cliente adequadamente
     const auth = await google.auth.getClient({
-      keyFile: 'path/to/your/credentials.json',
+      credentials: usuarioCredenciais,
       scopes: ['https://www.googleapis.com/auth/drive'],
     });
     const drive = google.drive({
