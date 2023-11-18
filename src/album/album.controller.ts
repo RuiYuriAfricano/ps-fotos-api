@@ -35,6 +35,11 @@ export class AlbumController {
     return this.albumService.remove(id);
   }
 
+  @Get('pasta')
+  getFolder() {
+    return this.albumService.createFolder();
+  }
+
   @Get(':id')
   getOne(@Param('id', ParseIntPipe) id: number) {
     return this.albumService.getOne(id);
@@ -44,6 +49,8 @@ export class AlbumController {
   getAll() {
     return this.albumService.getAll();
   }
+
+  
 
   @Post('listarAlbuns')
   listarAlbunsDoUtilizador(@Body('nome') nome: string) {
