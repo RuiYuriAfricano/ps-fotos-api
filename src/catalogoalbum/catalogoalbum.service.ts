@@ -6,7 +6,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class CatalogoAlbumService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async add(data: AddCatalogoAlbumDto) {
     const catalogoalbum = await this.prisma.catalogAlbum.create({
@@ -14,7 +14,6 @@ export class CatalogoAlbumService {
     });
     return catalogoalbum;
   }
-
 
   async update(data: UpdateCatalogoAlbumDto) {
     data.codcatalogo = Number(data?.codcatalogo);
@@ -66,12 +65,16 @@ export class CatalogoAlbumService {
       });
 
       if (!catalogosAlbum || catalogosAlbum.length === 0) {
-        throw new Error(`Nenhum catálogo encontrado para o álbum com ID ${albumId}.`);
+        throw new Error(
+          `Nenhum catálogo encontrado para o álbum com ID ${albumId}.`
+        );
       }
 
       // Obter todas as fotos dos arquivos associados aos catálogos
       const fotos = await Promise.all(
-        catalogosAlbum.map(async (catalogo) => this.obterFotosDoArquivo(catalogo.url))
+        catalogosAlbum.map(async (catalogo) =>
+          this.obterFotosDoArquivo(catalogo.url)
+        )
       );
 
       // Flatten a matriz de matrizes em uma única matriz
@@ -81,7 +84,6 @@ export class CatalogoAlbumService {
     } catch (error) {
       throw new Error(`Erro ao visualizar o álbum: ${error.message}`);
     }
-
   }
 
   async obterFotosDoArquivo(urlArquivo: string) {
@@ -90,7 +92,9 @@ export class CatalogoAlbumService {
       const resposta = await axios.get(urlArquivo);
 
       if (resposta.status !== 200) {
-        throw new Error(`Falha ao obter o conteúdo do arquivo. Código de status: ${resposta.status}`);
+        throw new Error(
+          `Falha ao obter o conteúdo do arquivo. Código de status: ${resposta.status}`
+        );
       }
 
       // O conteúdo do arquivo é a resposta.data
@@ -104,5 +108,4 @@ export class CatalogoAlbumService {
       throw new Error(`Erro ao obter fotos do arquivo: ${error.message}`);
     }
   }
-
 }
