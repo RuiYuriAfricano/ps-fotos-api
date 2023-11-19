@@ -1,39 +1,51 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { AddAlbumDto } from './dto/addAlbumDto';
 import { UpdateAlbumDto } from './dto/updateAlbumDto';
-import multer from 'multer';
 import { google } from 'googleapis';
 import { PrismaService } from 'src/prisma/prisma.service';
+
+import * as fs from 'fs';
 
 @Injectable()
 export class AlbumService {
   constructor(private prisma: PrismaService) {}
 
-  async createFolder() {
-
+  getDrive({
+    access_token,
+    id_token,
+  }: {
+    access_token: string;
+    id_token: string;
+  }) {
     const auth = new google.auth.OAuth2(
-      "99147321916-mv9ccqp3fpjsgfqi14ndphuef7i485dv.apps.googleusercontent.com",
-      "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",
+      '99147321916-mv9ccqp3fpjsgfqi14ndphuef7i485dv.apps.googleusercontent.com',
+      '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',
       'https://developers.google.com/oauthplayground'
-  );
+    );
 
-  auth.setCredentials({
-    access_token: "ya29.a0AfB_byCJJLkaG9XFoUYRCJBJKHk5LxVDBOpj6eUFt_XYK1OHEww7OJ8Ymo6mu5mZErpwK5TglOfLoTWsTi1tkgfsbTDnH0zJoz0mShwW0v8lpCDYY-fT8zYSirOkAonLPE7si9TkFdwAHoEFto-UEv5vSjH83IOwCzYaCgYKAW8SARISFQHGX2Mil0oOqf5TxJmamZeKPdJWsg0170",
-    id_token: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjViMzcwNjk2MGUzZTYwMDI0YTI2NTVlNzhjZmE2M2Y4N2M5N2QzMDkiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIyODU2OTU2MTk1NTAtNTN2bnF2Y2pxNnVtOTU2YWFobDEyZGRsM3Y2OHB2dnIuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIyODU2OTU2MTk1NTAtOWsxa2E3MXJzNHBpODA1OHNoZzRna2tsZTlpdTlrZGcuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMDcyODI4MzkzNTE2MTEwMDUyMzEiLCJlbWFpbCI6Impvc2Vkb21pbmdvczkxOUBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmFtZSI6Ikpvc8OpIERvbWluZ29zIENhc3N1YSBOZG9uZ2UiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jS2tYYlBmMEFubE5kYmJ2c2RTcXJvWXd0MDdmQVBwRmE4VzB4LUVwOEMtZFE9czk2LWMiLCJnaXZlbl9uYW1lIjoiSm9zw6kgRG9taW5nb3MgQ2Fzc3VhIiwiZmFtaWx5X25hbWUiOiJOZG9uZ2UiLCJsb2NhbGUiOiJwdC1CUiIsImlhdCI6MTcwMDMwMzc2NCwiZXhwIjoxNzAwMzA3MzY0fQ.t7QkVX3GYiGCrU0t9hW4j3KsJz3wmYrnRkXWX_H9t6Z573VLgonANv2VmJEODmNp-mts2p5Kz70g_LOc9-XOXQnkoV5Rv8G8gt_0Gi42gNUJ-hfoZg0cYiEkPmc1qGk0Z4Vrsq8hAwh36Kec9gqKF7r4F02mJx9Un6ckN7-ZXmxO_Fuzx-PRxVBsUwNdxfe9eBwOq-FB5ortCNmWcyKf33S0w2jFwWolFFr6Tbm08Pilyiyj4J4c2U5U11I-WfEYHFnoL7uDyAknYQUqd6qk9_GqnRz4semgSaGufpLrUJdyj8RTQM4G9EYSS63KvTvtaAYosyuEEhSm8q1V168lCg",
-  });
-
+    auth.setCredentials({
+      access_token,
+      id_token,
+    });
 
     const drive = google.drive({ version: 'v3', auth });
+
+    return drive;
+  }
+
+  async createFolder({ drive, name }) {
     try {
       const response = await drive.files.create({
-        fields: "id",
+        fields: 'id',
         requestBody: {
-            name: 'Album Z',
-            mimeType: 'application/vnd.google-apps.folder'
+          name,
+          mimeType: 'application/vnd.google-apps.folder',
         },
-    });
+      });
+
       console.log('Album Folder Id:', response);
+
       return response;
     } catch (err) {
       // TODO(developer) - Handle error
@@ -41,10 +53,64 @@ export class AlbumService {
     }
   }
 
-  async add(data: AddAlbumDto) {
-    const album = await this.prisma.album.create({
-      data,
+  async addFilesInFolder({ folderId, files, drive }) {
+    for (const file of files) {
+      const response = await drive.files.create({
+        requestBody: {
+          name: file?.filename,
+          mimeType: file?.mimetype,
+          parents: [folderId],
+        },
+        media: {
+          mimeType: file?.mimetype,
+          body: fs.createReadStream(file?.path),
+        },
+      });
+
+      fs.unlinkSync(file?.path);
+    }
+  }
+
+  async add(data: AddAlbumDto, files: Array<Express.Multer.File>) {
+    // autenticar com google
+    const drive = this.getDrive({
+      access_token: data.accessToken,
+      id_token: data.idToken,
     });
+
+    // criar album
+    const album = await this.prisma.album.create({
+      data: {
+        nome: data.nome,
+      },
+    });
+
+    //criar pasta no drive
+    const responseFolder = await this.createFolder({
+      drive,
+      name: data.nome,
+    });
+
+    if (!responseFolder?.data?.id) {
+      throw new ForbiddenException({
+        error: 'folder not created',
+      });
+    }
+
+    //criar ficheiros na pasta
+    await this.addFilesInFolder({
+      folderId: responseFolder?.data?.id,
+      files,
+      drive,
+    });
+
+    // vincular user
+    // data.users[0]
+    // this.prisma.catalogAlbum.create({
+    //   data: {
+
+    //   }
+    // })
     return album;
   }
 

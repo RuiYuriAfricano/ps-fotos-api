@@ -14,7 +14,7 @@ import { UpdateUtilizadorDto } from './dto/updateUtilizadorDto';
 
 @Controller('utilizador')
 export class UtilizadorController {
-  constructor(private utilizadorService: UtilizadorService) { }
+  constructor(private utilizadorService: UtilizadorService) {}
 
   @Post('login')
   login(@Body('nome') username: string, @Body('password') password: string) {
@@ -32,7 +32,6 @@ export class UtilizadorController {
     const userInfo = await this.utilizadorService.getSessionInfo(sessionId);
     return { userInfo };
   }
-
 
   @Post()
   add(@Body() data: AddUtilizadorDto) {

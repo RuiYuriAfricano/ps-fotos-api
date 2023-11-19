@@ -8,21 +8,49 @@ import {
   Controller,
   ParseIntPipe,
   UploadedFiles,
-  UseInterceptors
+  UseInterceptors,
 } from '@nestjs/common';
 import { AlbumService } from './album.service';
 import { AddAlbumDto } from './dto/addAlbumDto';
 import { UpdateAlbumDto } from './dto/updateAlbumDto';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
-
+import {
+  FileFieldsInterceptor,
+  FilesInterceptor,
+} from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 
 @Controller('album')
 export class AlbumController {
-  constructor(private albumService: AlbumService) { }
+  constructor(private albumService: AlbumService) {}
 
   @Post()
-  add(@Body() data: AddAlbumDto) {
-    return this.albumService.add(data);
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      storage: diskStorage({
+        destination: (req, file, callback) => {
+          callback(null, 'upload/');
+        },
+        filename: (req, file, callback) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          callback(
+            null,
+            file.fieldname + '-' + uniqueSuffix + file.originalname
+          );
+        },
+      }),
+    })
+  )
+  add(
+    @Body() data: AddAlbumDto,
+    @UploadedFiles() files: Array<Express.Multer.File>
+  ) {
+    return this.albumService.add(data, files);
+  }
+
+  @Post()
+  uploadImage(@Body() data: AddAlbumDto) {
+    //return this.albumService.add(data);
   }
 
   @Put()
@@ -37,7 +65,7 @@ export class AlbumController {
 
   @Get('pasta')
   getFolder() {
-    return this.albumService.createFolder();
+    // return this.albumService.createFolder();
   }
 
   @Get(':id')
@@ -50,26 +78,24 @@ export class AlbumController {
     return this.albumService.getAll();
   }
 
-  
-
   @Post('listarAlbuns')
   listarAlbunsDoUtilizador(@Body('nome') nome: string) {
     return this.albumService.listarAlbunsDoUtilizador(nome);
   }
 
   @Post('adicionarFotosAoAlbum/:albumId/:catalogoId')
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'photos', maxCount: 10 },
-  ]))
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'photos', maxCount: 10 }]))
   adicionarFotosAoAlbum(
     @Param('albumId', ParseIntPipe) albumId: number,
     @Param('catalogoId', ParseIntPipe) catalogoId: number,
     @UploadedFiles() photos: { photos: Express.Multer.File[] },
     @Body() usuarioCredenciais: any
   ) {
-    return this.albumService.adicionarFotosAoAlbum(albumId, photos.photos, catalogoId, usuarioCredenciais);
+    return this.albumService.adicionarFotosAoAlbum(
+      albumId,
+      photos.photos,
+      catalogoId,
+      usuarioCredenciais
+    );
   }
-
-
-
 }

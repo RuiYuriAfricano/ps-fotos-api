@@ -22,11 +22,10 @@ model album {
 }
 
 model catalogAlbum {
-  codcatalogo  Int    @id @default(autoincrement())
+  codcatalogo  Int         @id @default(autoincrement())
   fkutilizador Int?
   fkalbum      Int?
   url          String
-
-  utilizador utilizador? @relation(fields: [fkutilizador], references: [codutilizador])
-  album      album?      @relation(fields: [fkalbum], references: [codalbum])
+  utilizador   utilizador? @relation(fields: [fkutilizador], references: [codutilizador])
+  album        album?      @relation(fields: [fkalbum], references: [codalbum])
 }

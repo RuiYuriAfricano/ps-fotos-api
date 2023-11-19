@@ -1,3 +1,6 @@
 export class AddAlbumDto {
-    nome: string;
+  nome: string;
+  idToken: string;
+  accessToken: string;
+  users: number[];
 }
