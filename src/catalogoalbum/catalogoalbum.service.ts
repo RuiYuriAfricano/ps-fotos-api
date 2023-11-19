@@ -10,7 +10,7 @@ import * as fs from 'fs';
 
 @Injectable()
 export class CatalogoAlbumService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   getDrive({
     access_token,
@@ -35,40 +35,18 @@ export class CatalogoAlbumService {
     return drive;
   }
 
-  async listFiles({ drive, folderId }) {
-    try {
-      const response = await drive.files.list({
-        q: `'${folderId}' in parents`,
-        fields: 'files(id, name), webViewLink',
-      });
-
-      const files = response.data.files;
-      if (files.length) {
-        files.forEach((file) => {
-          console.log(
-            `File Name: ${file.name}, File ID: ${file.id}, Link: ${file.webViewLink}`
-          );
-          // Exemplo: Baixar a primeira imagem
-        });
-        return files;
-      } else {
-        console.log('No files found.');
-      }
-    } catch (err) {
-      console.error('Error listing files:', err.message);
-    }
-  }
-
-  async listarFotos(data: ListCatalogoFotosDto){
+  async listarFotos(data: ListCatalogoFotosDto) {
     const drive = this.getDrive({
       access_token: data.accessToken,
       id_token: data.idToken,
     });
 
-    const folderId = data.folderId;
-    const response = this.listFiles({drive, folderId});
+    const response = await drive.files.list({
+      q: "'" + data.folderId + "' in parents",
+      fields: 'files(id, name, webViewLink, webContentLink)',
+    });
 
-    return response;
+    return response?.data?.files || [];
   }
 
   async writeCatalog({ content = [] }) {
@@ -124,14 +102,13 @@ export class CatalogoAlbumService {
     }
   }
 
-  async updateCatalog({drive, fileId}) {
-  
+  async updateCatalog({ drive, fileId }) {
     // Lê o novo conteúdo do arquivo
     const media = {
       mimeType: 'text/plain',
       body: fs.createReadStream('arquivo.txt'),
     };
-  
+
     // Atualiza o conteúdo do arquivo no Google Drive
     const response = await drive.files.update({
       fileId: fileId,
@@ -141,13 +118,13 @@ export class CatalogoAlbumService {
     return response?.data.id;
   }
 
-  async readCatalogContent({drive, fileId}) {
+  async readCatalogContent({ drive, fileId }) {
     try {
       const response = await drive.files.export({
         fileId: fileId,
         mimeType: 'text/plain',
       });
-  
+
       console.log('File Content:', response.data);
 
       return response.data;
@@ -174,7 +151,7 @@ export class CatalogoAlbumService {
       });
     }
 
-    await this.writeCatalog({ content: [""] });
+    await this.writeCatalog({ content: [''] });
 
     //Realizar o upload do catalogo
     const responseCatalogId = await this.uploadCatalog({
@@ -206,8 +183,8 @@ export class CatalogoAlbumService {
     });
 
     const response = await this.readCatalogContent({
-      drive, 
-      fileId: data?.fileId
+      drive,
+      fileId: data?.fileId,
     });
 
     await this.writeCatalog({ content: [response] });
@@ -222,8 +199,8 @@ export class CatalogoAlbumService {
       where: {
         codcatalogo: data.codcatalogo,
       },
-      data:{
-        coddrive: responseCatalogId
+      data: {
+        coddrive: responseCatalogId,
       },
     });
 
@@ -267,12 +244,16 @@ export class CatalogoAlbumService {
       });
 
       if (!catalogosAlbum || catalogosAlbum.length === 0) {
-        throw new Error(`Nenhum catálogo encontrado para o álbum com ID ${albumId}.`);
+        throw new Error(
+          `Nenhum catálogo encontrado para o álbum com ID ${albumId}.`
+        );
       }
 
       // Obter todas as fotos dos arquivos associados aos catálogos
       const fotos = await Promise.all(
-        catalogosAlbum.map(async (catalogo) => this.obterFotosDoArquivo(catalogo.url))
+        catalogosAlbum.map(async (catalogo) =>
+          this.obterFotosDoArquivo(catalogo.url)
+        )
       );
 
       // Flatten a matriz de matrizes em uma única matriz
@@ -282,7 +263,6 @@ export class CatalogoAlbumService {
     } catch (error) {
       throw new Error(`Erro ao visualizar o álbum: ${error.message}`);
     }
-
   }
 
   async obterFotosDoArquivo(urlArquivo: string) {
@@ -291,7 +271,9 @@ export class CatalogoAlbumService {
       const resposta = await axios.get(urlArquivo);
 
       if (resposta.status !== 200) {
-        throw new Error(`Falha ao obter o conteúdo do arquivo. Código de status: ${resposta.status}`);
+        throw new Error(
+          `Falha ao obter o conteúdo do arquivo. Código de status: ${resposta.status}`
+        );
       }
 
       // O conteúdo do arquivo é a resposta.data
@@ -305,5 +287,4 @@ export class CatalogoAlbumService {
       throw new Error(`Erro ao obter fotos do arquivo: ${error.message}`);
     }
   }
-
 }
