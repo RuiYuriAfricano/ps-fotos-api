@@ -1,28 +1,230 @@
-import { Injectable } from '@nestjs/common';
+/* eslint-disable prettier/prettier */
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { AddCatalogoAlbumDto } from './dto/addCatalogoAlbumDto';
 import { UpdateCatalogoAlbumDto } from './dto/updateCatalogoAlbumDto';
+import { ListCatalogoFotosDto } from './dto/listCatalogoFotosDto';
 import axios from 'axios';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { google } from 'googleapis';
+import * as fs from 'fs';
 
 @Injectable()
 export class CatalogoAlbumService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
+
+  getDrive({
+    access_token,
+    id_token,
+  }: {
+    access_token: string;
+    id_token: string;
+  }) {
+    const auth = new google.auth.OAuth2(
+      '99147321916-mv9ccqp3fpjsgfqi14ndphuef7i485dv.apps.googleusercontent.com',
+      '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',
+      'https://developers.google.com/oauthplayground'
+    );
+
+    auth.setCredentials({
+      access_token,
+      id_token,
+    });
+
+    const drive = google.drive({ version: 'v3', auth });
+
+    return drive;
+  }
+
+  async listFiles({ drive, folderId }) {
+    try {
+      const response = await drive.files.list({
+        q: `'${folderId}' in parents`,
+        fields: 'files(id, name), webViewLink',
+      });
+
+      const files = response.data.files;
+      if (files.length) {
+        files.forEach((file) => {
+          console.log(
+            `File Name: ${file.name}, File ID: ${file.id}, Link: ${file.webViewLink}`
+          );
+          // Exemplo: Baixar a primeira imagem
+        });
+        return files;
+      } else {
+        console.log('No files found.');
+      }
+    } catch (err) {
+      console.error('Error listing files:', err.message);
+    }
+  }
+
+  async listarFotos(data: ListCatalogoFotosDto){
+    const drive = this.getDrive({
+      access_token: data.accessToken,
+      id_token: data.idToken,
+    });
+
+    const folderId = data.folderId;
+    const response = this.listFiles({drive, folderId});
+
+    return response;
+  }
+
+  async writeCatalog({ content = [] }) {
+    try {
+      for (const url_ of content) {
+        await fs.writeFileSync('./arquivo.txt', url_);
+      }
+      // file written successfully
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async uploadCatalog({ drive, folderId }) {
+    // Lê o conteúdo do arquivo
+    const media = {
+      mimeType: 'text/plain',
+      body: fs.createReadStream('./arquivo.txt'),
+    };
+
+    // Cria o arquivo no Google Drive
+    const response = await drive.files.create({
+      fields: 'id',
+      requestBody: {
+        name: 'catalogo.txt',
+        mimeType: 'text/plain',
+        parents: [folderId],
+      },
+      media: media,
+    });
+
+    // fs.unlinkSync('./arquivo.txt');
+
+    return response?.data?.id;
+  }
+
+  async createFolder({ drive, name }) {
+    try {
+      const response = await drive.files.create({
+        fields: 'id',
+        requestBody: {
+          name,
+          mimeType: 'application/vnd.google-apps.folder',
+        },
+      });
+
+      console.log('Album Folder Id:', response);
+
+      return response;
+    } catch (err) {
+      // TODO(developer) - Handle error
+      throw err;
+    }
+  }
+
+  async updateCatalog({drive, fileId}) {
+  
+    // Lê o novo conteúdo do arquivo
+    const media = {
+      mimeType: 'text/plain',
+      body: fs.createReadStream('arquivo.txt'),
+    };
+  
+    // Atualiza o conteúdo do arquivo no Google Drive
+    const response = await drive.files.update({
+      fileId: fileId,
+      media: media,
+    });
+
+    return response?.data.id;
+  }
+
+  async readCatalogContent({drive, fileId}) {
+    try {
+      const response = await drive.files.export({
+        fileId: fileId,
+        mimeType: 'text/plain',
+      });
+  
+      console.log('File Content:', response.data);
+
+      return response.data;
+    } catch (err) {
+      console.error('Error reading file content:', err.message);
+    }
+  }
 
   async add(data: AddCatalogoAlbumDto) {
-    const catalogoalbum = await this.prisma.catalogAlbum.create({
-      data,
+    const drive = this.getDrive({
+      access_token: data.accessToken,
+      id_token: data.idToken,
     });
+
+    //criar pasta no drive
+    const responseFolder = await this.createFolder({
+      drive,
+      name: data.nome,
+    });
+
+    if (!responseFolder?.data?.id) {
+      throw new ForbiddenException({
+        error: 'folder not created',
+      });
+    }
+
+    await this.writeCatalog({ content: [""] });
+
+    //Realizar o upload do catalogo
+    const responseCatalogId = await this.uploadCatalog({
+      drive,
+      folderId: responseFolder?.data?.id,
+    });
+
+    const user = data.users[0];
+
+    const catalogoalbum = await this.prisma.catalogAlbum.create({
+      data: {
+        fkutilizador: Number(user),
+        fkalbum: Number(data.codalbum),
+        coddrivealbum: responseFolder?.data?.id,
+        coddrive: responseCatalogId,
+        url: '',
+      },
+    });
+
     return catalogoalbum;
   }
 
   async update(data: UpdateCatalogoAlbumDto) {
     data.codcatalogo = Number(data?.codcatalogo);
 
+    const drive = this.getDrive({
+      access_token: data.accessToken,
+      id_token: data.idToken,
+    });
+
+    const response = await this.readCatalogContent({
+      drive, 
+      fileId: data?.fileId
+    });
+
+    await this.writeCatalog({ content: [response] });
+
+    //Realizar o upload do catalogo
+    const responseCatalogId = await this.updateCatalog({
+      drive,
+      fileId: data?.fileId,
+    });
+
     const catalogoalbum = await this.prisma.catalogAlbum.update({
       where: {
         codcatalogo: data.codcatalogo,
       },
-      data,
+      data:{
+        coddrive: responseCatalogId
+      },
     });
 
     return catalogoalbum;
@@ -65,16 +267,12 @@ export class CatalogoAlbumService {
       });
 
       if (!catalogosAlbum || catalogosAlbum.length === 0) {
-        throw new Error(
-          `Nenhum catálogo encontrado para o álbum com ID ${albumId}.`
-        );
+        throw new Error(`Nenhum catálogo encontrado para o álbum com ID ${albumId}.`);
       }
 
       // Obter todas as fotos dos arquivos associados aos catálogos
       const fotos = await Promise.all(
-        catalogosAlbum.map(async (catalogo) =>
-          this.obterFotosDoArquivo(catalogo.url)
-        )
+        catalogosAlbum.map(async (catalogo) => this.obterFotosDoArquivo(catalogo.url))
       );
 
       // Flatten a matriz de matrizes em uma única matriz
@@ -84,6 +282,7 @@ export class CatalogoAlbumService {
     } catch (error) {
       throw new Error(`Erro ao visualizar o álbum: ${error.message}`);
     }
+
   }
 
   async obterFotosDoArquivo(urlArquivo: string) {
@@ -92,9 +291,7 @@ export class CatalogoAlbumService {
       const resposta = await axios.get(urlArquivo);
 
       if (resposta.status !== 200) {
-        throw new Error(
-          `Falha ao obter o conteúdo do arquivo. Código de status: ${resposta.status}`
-        );
+        throw new Error(`Falha ao obter o conteúdo do arquivo. Código de status: ${resposta.status}`);
       }
 
       // O conteúdo do arquivo é a resposta.data
@@ -108,4 +305,5 @@ export class CatalogoAlbumService {
       throw new Error(`Erro ao obter fotos do arquivo: ${error.message}`);
     }
   }
+
 }

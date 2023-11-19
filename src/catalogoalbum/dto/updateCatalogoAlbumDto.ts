@@ -5,4 +5,7 @@ export class UpdateCatalogoAlbumDto {
   url: string;
   coddrive: string;
   coddrivealbum: string;
+  idToken: string;
+  accessToken: string;
+  fileId: string;
 }
