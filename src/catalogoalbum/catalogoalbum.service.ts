@@ -7,10 +7,11 @@ import axios from 'axios';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { google } from 'googleapis';
 import * as fs from 'fs';
+import { AddUtilizadorDto } from 'src/utilizador/dto/addUtilizadorDto';
 
 @Injectable()
 export class CatalogoAlbumService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   getDrive({
     access_token,
@@ -66,19 +67,19 @@ export class CatalogoAlbumService {
       id_token: data.idToken,
     });
 
-    const folderIds = await this.verTodasFotos(Number(data?.folderId));
+    const dataFotos = await this.verTodasFotos(Number(data?.folderId));
     const images = [];
 
-    folderIds.forEach(async folderId =>  {
+    for (const item of dataFotos) {
       const response = await drive.files.list({
-        q: "'" + folderId.coddrivealbum + "' in parents",
+        q: "'" + item.coddrivealbum + "' in parents",
         fields: 'files(id, name, webViewLink, webContentLink, thumbnailLink)',
       });
 
       images.push(response?.data?.files);
-    });
+    }
 
-    return images;
+    return images.flat(1);
   }
 
   async writeCatalog({ content = [] }) {
@@ -164,6 +165,27 @@ export class CatalogoAlbumService {
       console.error('Error reading file content:', err.message);
     }
   }
+
+  async addUserCatalogo(codutilizador: number, codalbum: number) {
+
+    const ultimoCatalogo = await this.prisma.catalogAlbum.findFirst({
+      orderBy: {
+        codcatalogo: 'desc',
+      },
+    });
+    const catalogoalbum = await this.prisma.catalogAlbum.create({
+      data: {
+        fkutilizador: Number(codutilizador),
+        fkalbum: Number(codalbum),
+        coddrivealbum: Number(Number(ultimoCatalogo.codcatalogo) + 2).toString(), //fiz isso por ser unique, depois será atualizado
+        coddrive: Number(Number(ultimoCatalogo.codcatalogo) + 100).toString(), //fiz isso por ser unique, depois será atualizado
+        url: '',
+      },
+    });
+
+    return catalogoalbum;
+  }
+
 
   async add(data: AddCatalogoAlbumDto) {
     const drive = this.getDrive({
@@ -332,7 +354,7 @@ export class CatalogoAlbumService {
         select: {
           coddrivealbum: true,
         },
-      });   
+      });
 
       return coddrivealbum;
     } catch (error) {
