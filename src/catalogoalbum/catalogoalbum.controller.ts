@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Get,
   Put,
@@ -7,15 +8,22 @@ import {
   Delete,
   Controller,
   ParseIntPipe,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
 import { CatalogoAlbumService } from './catalogoalbum.service';
 import { AddCatalogoAlbumDto } from './dto/addCatalogoAlbumDto';
 import { UpdateCatalogoAlbumDto } from './dto/updateCatalogoAlbumDto';
 import { ListCatalogoFotosDto } from './dto/listCatalogoFotosDto';
+import {
+  FileFieldsInterceptor,
+  FilesInterceptor,
+} from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 
 @Controller('catalogoalbum')
 export class CatalogoAlbumController {
-  constructor(private catalogoAlbumService: CatalogoAlbumService) { }
+  constructor(private catalogoAlbumService: CatalogoAlbumService) {}
 
   @Post()
   add(@Body() data: AddCatalogoAlbumDto) {
@@ -48,8 +56,39 @@ export class CatalogoAlbumController {
     return this.catalogoAlbumService.verTodasFotos(Number(id));
   }
 
-  @Get('fotos')
+  @Post('fotos')
   getAlbumPhotos(@Body() data: ListCatalogoFotosDto) {
     return this.catalogoAlbumService.listarFotos(data);
+  }
+
+  @Post('addFotos')
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      storage: diskStorage({
+        destination: (req, file, callback) => {
+          callback(null, 'upload/');
+        },
+        filename: (req, file, callback) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          callback(
+            null,
+            file.fieldname + '-' + uniqueSuffix + file.originalname
+          );
+        },
+      }),
+    })
+  )
+  addAlbumPhotos(@Body() data: AddCatalogoAlbumDto,
+  @UploadedFiles() files: Array<Express.Multer.File>) {
+    return this.catalogoAlbumService.addFoto(data, files);
+  }
+
+  
+  @Post('file')
+  getFileId(@Body() data: UpdateCatalogoAlbumDto) {
+    const idutilizador = data.fkutilizador;
+    const idalbum = data.fkalbum;
+    return this.catalogoAlbumService.getFileId(Number(idutilizador), Number(idalbum));
   }
 }

@@ -35,6 +35,31 @@ export class CatalogoAlbumService {
     return drive;
   }
 
+  async addFilesInFolder({ folderId, files, drive }) {
+    const urls = [];
+
+    for (const file of files) {
+      const response = await drive.files.create({
+        fields: 'webViewLink, webContentLink',
+        requestBody: {
+          name: file?.filename,
+          mimeType: file?.mimetype,
+          parents: [folderId],
+        },
+        media: {
+          mimeType: file?.mimetype,
+          body: fs.createReadStream(file?.path),
+        },
+      });
+
+      urls.push(response?.data?.webViewLink);
+
+      fs.unlinkSync(file?.path);
+    }
+
+    return urls;
+  }
+
   async listarFotos(data: ListCatalogoFotosDto) {
     const drive = this.getDrive({
       access_token: data.accessToken,
@@ -44,13 +69,13 @@ export class CatalogoAlbumService {
     const folderIds = await this.verTodasFotos(Number(data?.folderId));
     const images = [];
 
-    folderIds.forEach(async folderId => {
+    folderIds.forEach(async folderId =>  {
       const response = await drive.files.list({
         q: "'" + folderId.coddrivealbum + "' in parents",
         fields: 'files(id, name, webViewLink, webContentLink, thumbnailLink)',
       });
 
-      images.push(response.data.files);
+      images.push(response?.data?.files);
     });
 
     return images;
@@ -181,6 +206,65 @@ export class CatalogoAlbumService {
     return catalogoalbum;
   }
 
+  async getFileId(utilizadorId, albumId)
+  {
+    const catalogoalbum = await this.prisma.catalogAlbum.findMany({
+        where: {
+          fkutilizador: utilizadorId,
+          fkalbum: albumId
+        },
+        select: {
+          codcatalogo: true,
+          coddrive: true,
+          coddrivealbum: true
+        },
+    });
+
+    return catalogoalbum[0];
+  }
+
+  async addFoto(data: AddCatalogoAlbumDto, files: Array<Express.Multer.File>) {
+
+    const drive = this.getDrive({
+      access_token: data.accessToken,
+      id_token: data.idToken,
+    });
+
+    const codesResponse = await this.getFileId(data.fkutilizador, data.fkalbum);
+
+     //criar ficheiros na pasta
+     const responseFiles = await this.addFilesInFolder({
+      folderId: codesResponse?.coddrivealbum,
+      files,
+      drive,
+    });
+
+    const response = await this.readCatalogContent({
+      drive,
+      fileId: codesResponse?.coddrive,
+    });
+
+    await this.writeCatalog({ content: [...response, responseFiles] });
+
+    //Realizar o upload do catalogo
+    const responseCatalogId = await this.updateCatalog({
+      drive,
+      fileId: codesResponse?.coddrive,
+    });
+
+    const catalogoalbum = await this.prisma.catalogAlbum.update({
+      where: {
+
+        codcatalogo: codesResponse?.codcatalogo,
+      },
+      data: {
+        coddrive: responseCatalogId,
+      },
+    });
+
+    return catalogoalbum;
+  }
+
   async update(data: UpdateCatalogoAlbumDto) {
     data.codcatalogo = Number(data?.codcatalogo);
 
@@ -256,60 +340,7 @@ export class CatalogoAlbumService {
     }
   }
 
-  async verAlbum(albumId: number) {
-    try {
-      // Obter todos os catálogos associados ao álbum
-      const catalogosAlbum = await this.prisma.catalogAlbum.findMany({
-        where: {
-          fkalbum: albumId,
-        },
-        select: {
-          url: true,
-        },
-      });
 
-      if (!catalogosAlbum || catalogosAlbum.length === 0) {
-        throw new Error(
-          `Nenhum catálogo encontrado para o álbum com ID ${albumId}.`
-        );
-      }
 
-      // Obter todas as fotos dos arquivos associados aos catálogos
-      const fotos = await Promise.all(
-        catalogosAlbum.map(async (catalogo) =>
-          this.obterFotosDoArquivo(catalogo.url)
-        )
-      );
 
-      // Flatten a matriz de matrizes em uma única matriz
-      const todasAsFotos = fotos.flat();
-
-      return todasAsFotos;
-    } catch (error) {
-      throw new Error(`Erro ao visualizar o álbum: ${error.message}`);
-    }
-  }
-
-  async obterFotosDoArquivo(urlArquivo: string) {
-    try {
-      // Fazer uma requisição HTTP para obter o conteúdo do arquivo de texto
-      const resposta = await axios.get(urlArquivo);
-
-      if (resposta.status !== 200) {
-        throw new Error(
-          `Falha ao obter o conteúdo do arquivo. Código de status: ${resposta.status}`
-        );
-      }
-
-      // O conteúdo do arquivo é a resposta.data
-      const conteudoArquivo = resposta.data;
-
-      // Processar o conteúdo para obter os links das fotos
-      const linksFotos = conteudoArquivo.split('\n').map((link) => link.trim());
-
-      return linksFotos;
-    } catch (error) {
-      throw new Error(`Erro ao obter fotos do arquivo: ${error.message}`);
-    }
-  }
 }
