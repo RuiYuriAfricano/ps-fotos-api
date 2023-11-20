@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { AddUtilizadorDto } from './dto/addUtilizadorDto';
 import { UpdateUtilizadorDto } from './dto/updateUtilizadorDto';

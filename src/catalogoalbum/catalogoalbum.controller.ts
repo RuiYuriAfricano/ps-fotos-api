@@ -42,6 +42,12 @@ export class CatalogoAlbumController {
     return this.catalogoAlbumService.getAll();
   }
 
+  @Post('todas')
+  getAllPhotos(@Body() data: ListCatalogoFotosDto) {
+    const id = data.folderId;
+    return this.catalogoAlbumService.verTodasFotos(Number(id));
+  }
+
   @Post('fotos')
   getAlbumPhotos(@Body() data: ListCatalogoFotosDto) {
     return this.catalogoAlbumService.listarFotos(data);
