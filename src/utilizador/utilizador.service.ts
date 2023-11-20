@@ -114,9 +114,26 @@ export class UtilizadorService {
     return utilizador;
   }
 
-  async getAll() {
-    const utilizadores = await this.prisma.utilizador.findMany();
+  async getAll(codalbum: number) {
+    const utilizadores = await this.prisma.utilizador.findMany({
+      where: {
+        NOT: {
+          catalogAlbum: {
+            some: {
+              fkalbum: {
+                equals: codalbum,
+              },
+            },
+          },
+        },
+      },
+    });
+
+
+    // Agora, 'utilizadores' conterá uma lista de objetos com os utilizadores
+    // que não estão associados ao codalbum fornecido.
 
     return utilizadores;
   }
+
 }
