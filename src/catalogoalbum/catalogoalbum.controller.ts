@@ -15,7 +15,7 @@ import { ListCatalogoFotosDto } from './dto/listCatalogoFotosDto';
 
 @Controller('catalogoalbum')
 export class CatalogoAlbumController {
-  constructor(private catalogoAlbumService: CatalogoAlbumService) { }
+  constructor(private catalogoAlbumService: CatalogoAlbumService) {}
 
   @Post()
   add(@Body() data: AddCatalogoAlbumDto) {
@@ -48,7 +48,7 @@ export class CatalogoAlbumController {
     return this.catalogoAlbumService.verTodasFotos(Number(id));
   }
 
-  @Get('fotos')
+  @Post('fotos')
   getAlbumPhotos(@Body() data: ListCatalogoFotosDto) {
     return this.catalogoAlbumService.listarFotos(data);
   }

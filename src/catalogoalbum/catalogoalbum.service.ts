@@ -41,17 +41,17 @@ export class CatalogoAlbumService {
       id_token: data.idToken,
     });
 
-    const folderIds = await this.verTodasFotos(Number(data?.folderId));
+    const dataFotos = await this.verTodasFotos(Number(data?.folderId));
     const images = [];
 
-    folderIds.forEach(async folderId => {
+    for (const item of dataFotos) {
       const response = await drive.files.list({
-        q: "'" + folderId.coddrivealbum + "' in parents",
+        q: "'" + item.coddrivealbum + "' in parents",
         fields: 'files(id, name, webViewLink, webContentLink, thumbnailLink)',
       });
 
       images.push(response.data.files);
-    });
+    }
 
     return images;
   }
@@ -248,7 +248,7 @@ export class CatalogoAlbumService {
         select: {
           coddrivealbum: true,
         },
-      });   
+      });
 
       return coddrivealbum;
     } catch (error) {
