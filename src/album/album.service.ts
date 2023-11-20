@@ -79,29 +79,7 @@ export class AlbumService {
     return urls;
   }
 
-  async listFiles({ drive, folderId }) {
-    try {
-      const response = await drive.files.list({
-        q: `'${folderId}' in parents`,
-        fields: 'files(id, name), webViewLink',
-      });
-
-      const files = response.data.files;
-      if (files.length) {
-        files.forEach((file) => {
-          console.log(
-            `File Name: ${file.name}, File ID: ${file.id}, Link: ${file.webViewLink}`
-          );
-          // Exemplo: Baixar a primeira imagem
-        });
-        return files;
-      } else {
-        console.log('No files found.');
-      }
-    } catch (err) {
-      console.error('Error listing files:', err.message);
-    }
-  }
+  
 
   async writeCatalog({ content = [] }) {
     try {
@@ -260,6 +238,8 @@ export class AlbumService {
         fotos,
         usuarioCredenciais
       );
+
+
 
       // Atualizar o arquivo de texto no Google Drive com os links das novas fotos
       const txtFileLink = await this.atualizarArquivoDeTextoNoGoogleDrive(

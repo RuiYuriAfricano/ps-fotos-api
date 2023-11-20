@@ -5,4 +5,10 @@ export class AddCatalogoAlbumDto {
   url: string;
   coddrive: string;
   coddrivealbum: string;
+  idToken: string;
+  accessToken: string;
+  folderId: string;
+  users: number[];
+  codalbum: number;
+  nome: string;
 }

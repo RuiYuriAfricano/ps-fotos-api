@@ -11,10 +11,11 @@ import {
 import { CatalogoAlbumService } from './catalogoalbum.service';
 import { AddCatalogoAlbumDto } from './dto/addCatalogoAlbumDto';
 import { UpdateCatalogoAlbumDto } from './dto/updateCatalogoAlbumDto';
+import { ListCatalogoFotosDto } from './dto/listCatalogoFotosDto';
 
 @Controller('catalogoalbum')
 export class CatalogoAlbumController {
-  constructor(private catalogoAlbumService: CatalogoAlbumService) { }
+  constructor(private catalogoAlbumService: CatalogoAlbumService) {}
 
   @Post()
   add(@Body() data: AddCatalogoAlbumDto) {
@@ -39,5 +40,10 @@ export class CatalogoAlbumController {
   @Get()
   getAll() {
     return this.catalogoAlbumService.getAll();
+  }
+
+  @Post('fotos')
+  getAlbumPhotos(@Body() data: ListCatalogoFotosDto) {
+    return this.catalogoAlbumService.listarFotos(data);
   }
 }
