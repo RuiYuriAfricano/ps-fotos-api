@@ -43,7 +43,7 @@ export class CatalogoAlbumService {
 
     const response = await drive.files.list({
       q: "'" + data.folderId + "' in parents",
-      fields: 'files(id, name, webViewLink, webContentLink)',
+      fields: 'files(id, name, webViewLink, webContentLink, thumbnailLink)',
     });
 
     return response?.data?.files || [];
