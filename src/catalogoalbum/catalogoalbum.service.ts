@@ -41,12 +41,19 @@ export class CatalogoAlbumService {
       id_token: data.idToken,
     });
 
-    const response = await drive.files.list({
-      q: "'" + data.folderId + "' in parents",
-      fields: 'files(id, name, webViewLink, webContentLink, thumbnailLink)',
+    const folderIds = await this.verTodasFotos(Number(data?.folderId));
+    const images = [];
+
+    folderIds.forEach(async folderId => {
+      const response = await drive.files.list({
+        q: "'" + folderId.coddrivealbum + "' in parents",
+        fields: 'files(id, name, webViewLink, webContentLink, thumbnailLink)',
+      });
+
+      images.push(response.data.files);
     });
 
-    return response?.data?.files || [];
+    return images;
   }
 
   async writeCatalog({ content = [] }) {
@@ -229,6 +236,24 @@ export class CatalogoAlbumService {
     const catalogoalbuns = await this.prisma.catalogAlbum.findMany();
 
     return catalogoalbuns;
+  }
+
+  async verTodasFotos(albumId: number) {
+    try {
+      // Obter todos os catálogos associados ao álbum
+      const coddrivealbum = await this.prisma.catalogAlbum.findMany({
+        where: {
+          fkalbum: albumId,
+        },
+        select: {
+          coddrivealbum: true,
+        },
+      });   
+
+      return coddrivealbum;
+    } catch (error) {
+      throw new Error(`Erro ao visualizar o álbum: ${error.message}`);
+    }
   }
 
   async verAlbum(albumId: number) {
