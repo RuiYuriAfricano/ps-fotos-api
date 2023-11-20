@@ -15,7 +15,7 @@ import { ListCatalogoFotosDto } from './dto/listCatalogoFotosDto';
 
 @Controller('catalogoalbum')
 export class CatalogoAlbumController {
-  constructor(private catalogoAlbumService: CatalogoAlbumService) { }
+  constructor(private catalogoAlbumService: CatalogoAlbumService) {}
 
   @Post()
   add(@Body() data: AddCatalogoAlbumDto) {
@@ -53,14 +53,19 @@ export class CatalogoAlbumController {
     return this.catalogoAlbumService.listarFotos(data);
   }
 
-  @Post('addUsers')
-  async addUsersCatalogo(@Body() requestBody: { codutilizadores: number[], codalbum: number }) {
+  @Post('addUserCatalogo')
+  async addUsersCatalogo(
+    @Body() requestBody: { users: number[]; codalbum: number }
+  ) {
     // Verifica se codutilizadores é uma array válida e não é vazia
-    if (requestBody.codutilizadores && requestBody.codutilizadores.length) {
+    if (requestBody.users && requestBody.users.length) {
       const catalogoAlbums = [];
 
-      for (let i = 0; i < requestBody.codutilizadores.length; i++) {
-        const catalogoalbum = await this.catalogoAlbumService.addUserCatalogo(requestBody.codutilizadores[i], requestBody.codalbum);
+      for (let i = 0; i < requestBody.users.length; i++) {
+        const catalogoalbum = await this.catalogoAlbumService.addUserCatalogo(
+          Number(requestBody.users[i]),
+          Number(requestBody.codalbum)
+        );
         catalogoAlbums.push(catalogoalbum);
       }
 
@@ -70,7 +75,4 @@ export class CatalogoAlbumController {
       return { error: 'A lista de utilizadores é inválida ou vazia.' };
     }
   }
-
-
-
 }
