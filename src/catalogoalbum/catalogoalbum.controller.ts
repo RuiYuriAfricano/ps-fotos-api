@@ -23,7 +23,7 @@ import { diskStorage } from 'multer';
 
 @Controller('catalogoalbum')
 export class CatalogoAlbumController {
-  constructor(private catalogoAlbumService: CatalogoAlbumService) {}
+  constructor(private catalogoAlbumService: CatalogoAlbumService) { }
 
   @Post()
   add(@Body() data: AddCatalogoAlbumDto) {
@@ -61,7 +61,6 @@ export class CatalogoAlbumController {
     return this.catalogoAlbumService.listarFotos(data);
   }
 
-<<<<<<< HEAD
   @Post('addFotos')
   @UseInterceptors(
     FilesInterceptor('files', 10, {
@@ -81,17 +80,17 @@ export class CatalogoAlbumController {
     })
   )
   addAlbumPhotos(@Body() data: AddCatalogoAlbumDto,
-  @UploadedFiles() files: Array<Express.Multer.File>) {
+    @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.catalogoAlbumService.addFoto(data, files);
   }
 
-  
+
   @Post('file')
   getFileId(@Body() data: UpdateCatalogoAlbumDto) {
     const idutilizador = data.fkutilizador;
     const idalbum = data.fkalbum;
     return this.catalogoAlbumService.getFileId(Number(idutilizador), Number(idalbum));
-=======
+  }
   @Post('addUserCatalogo')
   async addUsersCatalogo(
     @Body() requestBody: { users: number[]; codalbum: number }
@@ -113,6 +112,5 @@ export class CatalogoAlbumController {
       // Trate o caso em que codutilizadores é undefined, null ou vazio
       return { error: 'A lista de utilizadores é inválida ou vazia.' };
     }
->>>>>>> 8101c2e202623f2729fbffaeb6c36c5fdedeec2a
   }
 }
