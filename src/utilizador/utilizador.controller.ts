@@ -14,7 +14,7 @@ import { UpdateUtilizadorDto } from './dto/updateUtilizadorDto';
 
 @Controller('utilizador')
 export class UtilizadorController {
-  constructor(private utilizadorService: UtilizadorService) {}
+  constructor(private utilizadorService: UtilizadorService) { }
 
   @Post('login')
   login(@Body('nome') username: string, @Body('password') password: string) {
@@ -58,8 +58,11 @@ export class UtilizadorController {
     return this.utilizadorService.getOneByName(nome);
   }
 
-  @Get()
-  getAll() {
-    return this.utilizadorService.getAll();
+  @Post('listarUsers')
+  getAll(@Body() body: { codalbum: number }) {
+    const { codalbum } = body;
+    return this.utilizadorService.getAll(codalbum);
   }
+
+
 }
