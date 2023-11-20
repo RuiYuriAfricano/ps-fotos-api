@@ -7,10 +7,11 @@ import axios from 'axios';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { google } from 'googleapis';
 import * as fs from 'fs';
+import { AddUtilizadorDto } from 'src/utilizador/dto/addUtilizadorDto';
 
 @Injectable()
 export class CatalogoAlbumService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   getDrive({
     access_token,
@@ -139,6 +140,27 @@ export class CatalogoAlbumService {
       console.error('Error reading file content:', err.message);
     }
   }
+
+  async addUserCatalogo(codutilizador: number, codalbum: number) {
+
+    const ultimoCatalogo = await this.prisma.catalogAlbum.findFirst({
+      orderBy: {
+        codcatalogo: 'desc',
+      },
+    });
+    const catalogoalbum = await this.prisma.catalogAlbum.create({
+      data: {
+        fkutilizador: Number(codutilizador),
+        fkalbum: Number(codalbum),
+        coddrivealbum: Number(Number(ultimoCatalogo.codcatalogo) + 2).toString(), //fiz isso por ser unique, depois será atualizado
+        coddrive: Number(Number(ultimoCatalogo.codcatalogo) + 100).toString(), //fiz isso por ser unique, depois será atualizado
+        url: '',
+      },
+    });
+
+    return catalogoalbum;
+  }
+
 
   async add(data: AddCatalogoAlbumDto) {
     const drive = this.getDrive({
