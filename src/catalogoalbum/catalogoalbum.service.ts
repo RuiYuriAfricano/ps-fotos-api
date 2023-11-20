@@ -53,7 +53,7 @@ export class CatalogoAlbumService {
       images.push(response.data.files);
     }
 
-    return images;
+    return images.flat(1);
   }
 
   async writeCatalog({ content = [] }) {
