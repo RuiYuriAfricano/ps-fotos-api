@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Get,
   Put,
@@ -63,6 +64,4 @@ export class UtilizadorController {
     const { codalbum } = body;
     return this.utilizadorService.getAll(codalbum);
   }
-
-
 }

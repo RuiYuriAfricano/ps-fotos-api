@@ -254,16 +254,22 @@ export class CatalogoAlbumService {
 
     const codesResponse = await this.getFileId(data.fkutilizador, data.fkalbum);
 
-     //criar ficheiros na pasta
+    let response = [];
+
+    if(codesResponse?.coddrive.length > 5)
+    {
+      //ler conteudo existente do catalogo
+        response = await this.readCatalogContent({
+        drive,
+        fileId: codesResponse?.coddrive,
+      });
+    }
+
+     //adicionar ficheiros na pasta
      const responseFiles = await this.addFilesInFolder({
       folderId: codesResponse?.coddrivealbum,
       files,
       drive,
-    });
-
-    const response = await this.readCatalogContent({
-      drive,
-      fileId: codesResponse?.coddrive,
     });
 
     await this.writeCatalog({ content: [...response, responseFiles] });
