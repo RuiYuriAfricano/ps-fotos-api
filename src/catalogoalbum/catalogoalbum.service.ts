@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable, ForbiddenException, Options } from '@nestjs/common';
 import { AddCatalogoAlbumDto } from './dto/addCatalogoAlbumDto';
 import { UpdateCatalogoAlbumDto } from './dto/updateCatalogoAlbumDto';
 import { ListCatalogoFotosDto } from './dto/listCatalogoFotosDto';
@@ -11,7 +11,7 @@ import { AddUtilizadorDto } from 'src/utilizador/dto/addUtilizadorDto';
 
 @Injectable()
 export class CatalogoAlbumService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   getDrive({
     access_token,
@@ -84,8 +84,14 @@ export class CatalogoAlbumService {
 
   async writeCatalog({ content = [] }) {
     try {
+      const writeFileOptions: any = {
+        encoding: 'utf8',
+        mode: 0o666,
+        flag: 'a',
+      };
+
       for (const url_ of content) {
-        await fs.writeFileSync('./arquivo.txt', url_);
+        await fs.writeFileSync('./arquivo.txt', url_, writeFileOptions);
       }
       // file written successfully
     } catch (err) {
@@ -167,7 +173,6 @@ export class CatalogoAlbumService {
   }
 
   async addUserCatalogo(codutilizador: number, codalbum: number) {
-
     const ultimoCatalogo = await this.prisma.catalogAlbum.findFirst({
       orderBy: {
         codcatalogo: 'desc',
@@ -177,7 +182,9 @@ export class CatalogoAlbumService {
       data: {
         fkutilizador: Number(codutilizador),
         fkalbum: Number(codalbum),
-        coddrivealbum: Number(Number(ultimoCatalogo.codcatalogo) + 2).toString(), //fiz isso por ser unique, depois será atualizado
+        coddrivealbum: Number(
+          Number(ultimoCatalogo.codcatalogo) + 2
+        ).toString(), //fiz isso por ser unique, depois será atualizado
         coddrive: Number(Number(ultimoCatalogo.codcatalogo) + 100).toString(), //fiz isso por ser unique, depois será atualizado
         url: '',
       },
@@ -185,7 +192,6 @@ export class CatalogoAlbumService {
 
     return catalogoalbum;
   }
-
 
   async add(data: AddCatalogoAlbumDto) {
     const drive = this.getDrive({
@@ -228,25 +234,23 @@ export class CatalogoAlbumService {
     return catalogoalbum;
   }
 
-  async getFileId(utilizadorId, albumId)
-  {
+  async getFileId(utilizadorId, albumId) {
     const catalogoalbum = await this.prisma.catalogAlbum.findMany({
-        where: {
-          fkutilizador: utilizadorId,
-          fkalbum: albumId
-        },
-        select: {
-          codcatalogo: true,
-          coddrive: true,
-          coddrivealbum: true
-        },
+      where: {
+        fkutilizador: utilizadorId,
+        fkalbum: albumId,
+      },
+      select: {
+        codcatalogo: true,
+        coddrive: true,
+        coddrivealbum: true,
+      },
     });
 
     return catalogoalbum[0];
   }
 
   async addFoto(data: AddCatalogoAlbumDto, files: Array<Express.Multer.File>) {
-
     const drive = this.getDrive({
       access_token: data.accessToken,
       id_token: data.idToken,
@@ -256,17 +260,16 @@ export class CatalogoAlbumService {
 
     let response = [];
 
-    if(codesResponse?.coddrive.length > 5)
-    {
+    if (codesResponse?.coddrive.length > 5) {
       //ler conteudo existente do catalogo
-        response = await this.readCatalogContent({
+      response = await this.readCatalogContent({
         drive,
         fileId: codesResponse?.coddrive,
       });
     }
 
-     //adicionar ficheiros na pasta
-     const responseFiles = await this.addFilesInFolder({
+    //adicionar ficheiros na pasta
+    const responseFiles = await this.addFilesInFolder({
       folderId: codesResponse?.coddrivealbum,
       files,
       drive,
@@ -282,7 +285,6 @@ export class CatalogoAlbumService {
 
     const catalogoalbum = await this.prisma.catalogAlbum.update({
       where: {
-
         codcatalogo: codesResponse?.codcatalogo,
       },
       data: {
@@ -367,8 +369,4 @@ export class CatalogoAlbumService {
       throw new Error(`Erro ao visualizar o álbum: ${error.message}`);
     }
   }
-
-
-
-
 }
