@@ -23,7 +23,7 @@ import { diskStorage } from 'multer';
 
 @Controller('catalogoalbum')
 export class CatalogoAlbumController {
-  constructor(private catalogoAlbumService: CatalogoAlbumService) {}
+  constructor(private catalogoAlbumService: CatalogoAlbumService) { }
 
   @Post()
   add(@Body() data: AddCatalogoAlbumDto) {
@@ -80,19 +80,22 @@ export class CatalogoAlbumController {
     })
   )
   addAlbumPhotos(@Body() data: AddCatalogoAlbumDto,
-  @UploadedFiles() files: Array<Express.Multer.File>) {
+    @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.catalogoAlbumService.addFoto(data, files);
   }
 
-  
+
   @Post('file')
   getFileId(@Body() data: UpdateCatalogoAlbumDto) {
     const idutilizador = data.fkutilizador;
     const idalbum = data.fkalbum;
     return this.catalogoAlbumService.getFileId(Number(idutilizador), Number(idalbum));
   }
+<<<<<<< HEAD
 
   
+=======
+>>>>>>> 7141e1b0f02a9f4758b37b541d10de5c3056438b
   @Post('addUserCatalogo')
   async addUsersCatalogo(
     @Body() requestBody: { users: number[]; codalbum: number }
