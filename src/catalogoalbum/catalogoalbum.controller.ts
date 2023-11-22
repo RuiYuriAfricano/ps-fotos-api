@@ -91,11 +91,8 @@ export class CatalogoAlbumController {
     const idalbum = data.fkalbum;
     return this.catalogoAlbumService.getFileId(Number(idutilizador), Number(idalbum));
   }
-<<<<<<< HEAD
 
   
-=======
->>>>>>> 7141e1b0f02a9f4758b37b541d10de5c3056438b
   @Post('addUserCatalogo')
   async addUsersCatalogo(
     @Body() requestBody: { users: number[]; codalbum: number }
