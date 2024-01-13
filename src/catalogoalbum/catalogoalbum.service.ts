@@ -11,7 +11,7 @@ import { AddUtilizadorDto } from 'src/utilizador/dto/addUtilizadorDto';
 
 @Injectable()
 export class CatalogoAlbumService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   getDrive({
     access_token,
@@ -237,8 +237,8 @@ export class CatalogoAlbumService {
   async getFileId(utilizadorId, albumId) {
     const catalogoalbum = await this.prisma.catalogAlbum.findMany({
       where: {
-        fkutilizador: utilizadorId,
-        fkalbum: albumId,
+        fkutilizador: Number(utilizadorId),
+        fkalbum: Number(albumId),
       },
       select: {
         codcatalogo: true,
@@ -251,22 +251,23 @@ export class CatalogoAlbumService {
   }
 
   async addFoto(data: AddCatalogoAlbumDto, files: Array<Express.Multer.File>) {
+
     const drive = this.getDrive({
       access_token: data.accessToken,
       id_token: data.idToken,
     });
 
-    const codesResponse = await this.getFileId(data.fkutilizador, data.fkalbum);
-
+    const codesResponse = await this.getFileId(data.users[0], data.codalbum);
+    console.log("ID do diretorio e do catalogo:::: " + codesResponse.coddrivealbum);
     let response = [];
 
-    if (codesResponse?.coddrive.length > 5) {
+    /*if (codesResponse?.coddrive.length > 5) {
       //ler conteudo existente do catalogo
       response = await this.readCatalogContent({
         drive,
         fileId: codesResponse?.coddrive,
       });
-    }
+    }*/
 
     //adicionar ficheiros na pasta
     const responseFiles = await this.addFilesInFolder({
@@ -275,7 +276,7 @@ export class CatalogoAlbumService {
       drive,
     });
 
-    await this.writeCatalog({ content: [...response, responseFiles] });
+    //await this.writeCatalog({ content: [...response, responseFiles] });
 
     //Realizar o upload do catalogo
     const responseCatalogId = await this.updateCatalog({
