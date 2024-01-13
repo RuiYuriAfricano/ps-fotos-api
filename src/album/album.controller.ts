@@ -21,7 +21,7 @@ import { diskStorage } from 'multer';
 
 @Controller('album')
 export class AlbumController {
-  constructor(private albumService: AlbumService) { }
+  constructor(private albumService: AlbumService) {}
 
   @Post()
   @UseInterceptors(
@@ -57,14 +57,7 @@ export class AlbumController {
   update(@Body() data: UpdateAlbumDto) {
     return this.albumService.update(data);
   }
-  @Post('updateTokens')
-  updateAlbumTokens(
-    @Body('newAccessToken') newAccessToken: string,
-    @Body('newIdToken') newIdToken: string,
-    @Body('username') username: string
-  ) {
-    return this.albumService.updateAlbumTokensForCondition(newAccessToken, newIdToken, username);
-  }
+
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.albumService.remove(id);
