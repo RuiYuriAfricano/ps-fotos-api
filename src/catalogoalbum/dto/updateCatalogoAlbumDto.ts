@@ -7,4 +7,5 @@ export class UpdateCatalogoAlbumDto {
   idToken: string;
   accessToken: string;
   fileId: string;
+  url: string;
 }

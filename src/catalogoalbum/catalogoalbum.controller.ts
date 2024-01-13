@@ -35,6 +35,11 @@ export class CatalogoAlbumController {
     return this.catalogoAlbumService.update(data);
   }
 
+  @Put("atualizaCatalogo")
+  update2(@Body() data: UpdateCatalogoAlbumDto) {
+    return this.catalogoAlbumService.update2(data);
+  }
+
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.catalogoAlbumService.remove(id);
@@ -92,7 +97,7 @@ export class CatalogoAlbumController {
     return this.catalogoAlbumService.getFileId(Number(idutilizador), Number(idalbum));
   }
 
-  
+
   @Post('addUserCatalogo')
   async addUsersCatalogo(
     @Body() requestBody: { users: number[]; codalbum: number }

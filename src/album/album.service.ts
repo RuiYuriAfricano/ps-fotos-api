@@ -10,7 +10,7 @@ import { response } from 'express';
 
 @Injectable()
 export class AlbumService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   getDrive({
     access_token,
@@ -79,7 +79,7 @@ export class AlbumService {
     return urls;
   }
 
-  
+
 
   async writeCatalog({ content = [] }) {
     try {
@@ -126,6 +126,8 @@ export class AlbumService {
     const album = await this.prisma.album.create({
       data: {
         nome: data.nome,
+        access_token: data.accessToken,
+        id_token: data.idToken,
       },
     });
 
@@ -165,7 +167,7 @@ export class AlbumService {
         fkalbum: Number(album?.codalbum),
         coddrivealbum: responseFolder?.data?.id,
         coddrive: responseCatalogId,
-        url: '',
+        url: 'sim',
       },
     });
 
@@ -183,6 +185,37 @@ export class AlbumService {
     });
 
     return album;
+  }
+
+  async updateAlbumTokensForCondition(newAccessToken: string, newIdToken: string, username: string) {
+
+    const catalogItems = await this.prisma.catalogAlbum.findMany({
+      where: {
+        url: "sim",
+        utilizador: {
+          nome: username,
+        },
+      },
+      select: {
+        fkalbum: true,
+      }
+    });
+
+    // Extrair os IDs dos álbuns
+    const albumIds = catalogItems.map(item => item.fkalbum).filter(id => id !== null) as number[];
+
+    // Atualizar os tokens dos álbuns encontrados
+    for (const codalbum of albumIds) {
+      await this.prisma.album.update({
+        where: { codalbum: codalbum },
+        data: {
+          access_token: newAccessToken,
+          id_token: newIdToken,
+        },
+      });
+    }
+
+    return this.prisma.album.findMany();
   }
 
   async remove(id: number) {
