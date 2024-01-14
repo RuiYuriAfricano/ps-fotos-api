@@ -8,7 +8,7 @@ datasource db {
 }
 
 // datasource db {
-//   provider = "sqlite"
+//   provider = "sqlite"g
 //   url      = "file:dev.db"
 // }
 
