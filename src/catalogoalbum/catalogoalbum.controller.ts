@@ -88,6 +88,7 @@ export class CatalogoAlbumController {
     @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.catalogoAlbumService.addFoto(data, files);
   }
+  
 
 
   @Post('file')

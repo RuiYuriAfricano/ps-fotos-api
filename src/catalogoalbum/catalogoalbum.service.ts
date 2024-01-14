@@ -284,8 +284,8 @@ export class CatalogoAlbumService {
   async getFileId(utilizadorId, albumId) {
     const catalogoalbum = await this.prisma.catalogAlbum.findMany({
       where: {
-        fkutilizador: Number(utilizadorId),
-        fkalbum: Number(albumId),
+        fkutilizador: utilizadorId,
+        fkalbum: albumId,
       },
       select: {
         codcatalogo: true,
@@ -312,8 +312,8 @@ export class CatalogoAlbumService {
       id_token: data.idToken,
     });*/
 
-    const codesResponse = await this.getFileId(data.users[0], data.codalbum);
-    console.log("ID do diretorio e do catalogo:::: " + codesResponse.coddrivealbum);
+    const codesResponse = await this.getFileId(data.fkutilizador, data.fkalbum);
+
     let response = [];
 
     /*if (codesResponse?.coddrive.length > 5) {

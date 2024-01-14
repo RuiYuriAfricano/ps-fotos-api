@@ -7,10 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-//datasource db {
-// provider = "sqlite"
-//url      = "file:dev.db"
-//}
+// datasource db {
+//   provider = "sqlite"
+//   url      = "file:dev.db"
+// }
 
 model utilizador {
   codutilizador Int            @id @default(autoincrement())
