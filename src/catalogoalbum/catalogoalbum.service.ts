@@ -237,8 +237,8 @@ export class CatalogoAlbumService {
   async getFileId(utilizadorId, albumId) {
     const catalogoalbum = await this.prisma.catalogAlbum.findMany({
       where: {
-        fkutilizador: utilizadorId,
-        fkalbum: albumId,
+        fkutilizador:  parseInt(utilizadorId) ,
+        fkalbum: parseInt(albumId),
       },
       select: {
         codcatalogo: true,
@@ -256,7 +256,7 @@ export class CatalogoAlbumService {
       id_token: data.idToken,
     });
 
-    const codesResponse = await this.getFileId(data.fkutilizador, data.fkalbum);
+    const codesResponse = await this.getFileId(data.users[0], data.codalbum);
 
     let response = [];
 
@@ -275,7 +275,7 @@ export class CatalogoAlbumService {
       drive,
     });
 
-    await this.writeCatalog({ content: [...response, responseFiles] });
+    //await this.writeCatalog({ content: [...response, responseFiles] });
 
     //Realizar o upload do catalogo
     const responseCatalogId = await this.updateCatalog({
