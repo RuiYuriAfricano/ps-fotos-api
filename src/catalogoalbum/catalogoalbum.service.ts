@@ -11,7 +11,7 @@ import { AddUtilizadorDto } from 'src/utilizador/dto/addUtilizadorDto';
 
 @Injectable()
 export class CatalogoAlbumService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   getDrive({
     access_token,
@@ -61,23 +61,69 @@ export class CatalogoAlbumService {
     return urls;
   }
 
+  async getTokensByAlbumId(codalbum) {
+    const album = await this.prisma.album.findUnique({
+      where: {
+        codalbum: codalbum
+      },
+      select: {
+        access_token: true,
+        id_token: true
+      }
+    });
+
+    if (album) {
+      return { access_token: album.access_token, id_token: album.id_token };
+    } else {
+      return null;
+    }
+  }
+
+  async getDrivesCodsByAlbumId(codalbum) {
+    const catalogAlbum = await this.prisma.catalogAlbum.findFirst({
+      where: {
+        fkalbum: codalbum,
+        url: "sim"
+      },
+      select: {
+        coddrive: true,
+        coddrivealbum: true
+      }
+    });
+
+    if (catalogAlbum) {
+      return { coddrive: catalogAlbum.coddrive, coddrivealbum: catalogAlbum.coddrivealbum };
+    } else {
+      return null;
+    }
+  }
+
   async listarFotos(data: ListCatalogoFotosDto) {
+
+    //Obter os tokens do album
+    const tokens = await this.getTokensByAlbumId(Number(data.folderId));
+
     const drive = this.getDrive({
+      access_token: tokens.access_token,
+      id_token: tokens.id_token,
+    });
+    /*const drive = this.getDrive({
       access_token: data.accessToken,
       id_token: data.idToken,
-    });
+    });*/
 
     const dataFotos = await this.verTodasFotos(Number(data?.folderId));
     const images = [];
 
-    for (const item of dataFotos) {
-      const response = await drive.files.list({
-        q: "'" + item.coddrivealbum + "' in parents",
-        fields: 'files(id, name, webViewLink, webContentLink, thumbnailLink)',
-      });
+    //for (const item of dataFotos) {
+    const response = await drive.files.list({
+      q: "'" + dataFotos.coddrivealbum + "' in parents",
+      fields: 'files(id, name, webViewLink, webContentLink, thumbnailLink)',
+    });
 
-      images.push(response?.data?.files);
-    }
+
+    images.push(response?.data?.files);
+    //}
 
     return images.flat(1);
   }
@@ -178,14 +224,15 @@ export class CatalogoAlbumService {
         codcatalogo: 'desc',
       },
     });
+    //Obter os tokens do album
+    const drivesCods = await this.getDrivesCodsByAlbumId(Number(codalbum));
+
     const catalogoalbum = await this.prisma.catalogAlbum.create({
       data: {
         fkutilizador: Number(codutilizador),
         fkalbum: Number(codalbum),
-        coddrivealbum: Number(
-          Number(ultimoCatalogo.codcatalogo) + 2
-        ).toString(), //fiz isso por ser unique, depois será atualizado
-        coddrive: Number(Number(ultimoCatalogo.codcatalogo) + 100).toString(), //fiz isso por ser unique, depois será atualizado
+        coddrivealbum: drivesCods.coddrivealbum,
+        coddrive: drivesCods.coddrive,
         url: '',
       },
     });
@@ -237,8 +284,8 @@ export class CatalogoAlbumService {
   async getFileId(utilizadorId, albumId) {
     const catalogoalbum = await this.prisma.catalogAlbum.findMany({
       where: {
-        fkutilizador: utilizadorId,
-        fkalbum: albumId,
+        fkutilizador: Number(utilizadorId),
+        fkalbum: Number(albumId),
       },
       select: {
         codcatalogo: true,
@@ -251,22 +298,31 @@ export class CatalogoAlbumService {
   }
 
   async addFoto(data: AddCatalogoAlbumDto, files: Array<Express.Multer.File>) {
+
+    //Obter os tokens do album
+    const tokens = await this.getTokensByAlbumId(Number(data.codalbum));
+
     const drive = this.getDrive({
-      access_token: data.accessToken,
-      id_token: data.idToken,
+      access_token: tokens.access_token,
+      id_token: tokens.id_token,
     });
 
-    const codesResponse = await this.getFileId(data.fkutilizador, data.fkalbum);
+    /*const drive = this.getDrive({
+      access_token: data.accessToken,
+      id_token: data.idToken,
+    });*/
 
+    const codesResponse = await this.getFileId(data.users[0], data.codalbum);
+    console.log("ID do diretorio e do catalogo:::: " + codesResponse.coddrivealbum);
     let response = [];
 
-    if (codesResponse?.coddrive.length > 5) {
+    /*if (codesResponse?.coddrive.length > 5) {
       //ler conteudo existente do catalogo
       response = await this.readCatalogContent({
         drive,
         fileId: codesResponse?.coddrive,
       });
-    }
+    }*/
 
     //adicionar ficheiros na pasta
     const responseFiles = await this.addFilesInFolder({
@@ -275,7 +331,7 @@ export class CatalogoAlbumService {
       drive,
     });
 
-    await this.writeCatalog({ content: [...response, responseFiles] });
+    //await this.writeCatalog({ content: [...response, responseFiles] });
 
     //Realizar o upload do catalogo
     const responseCatalogId = await this.updateCatalog({
@@ -328,6 +384,23 @@ export class CatalogoAlbumService {
     return catalogoalbum;
   }
 
+  async update2(data: UpdateCatalogoAlbumDto) {
+    const catalogoalbum = await this.prisma.catalogAlbum.update({
+      where: {
+        codcatalogo: data.codcatalogo,
+      },
+      data: {
+        coddrive: data.coddrive,
+        coddrivealbum: data.coddrivealbum,
+        url: data.url,
+        fkutilizador: data.fkutilizador,
+        fkalbum: data.fkalbum
+      }
+    });
+
+    return catalogoalbum;
+  }
+
   async remove(id: number) {
     const response = await this.prisma.catalogAlbum.delete({
       where: { codcatalogo: id },
@@ -355,7 +428,7 @@ export class CatalogoAlbumService {
   async verTodasFotos(albumId: number) {
     try {
       // Obter todos os catálogos associados ao álbum
-      const coddrivealbum = await this.prisma.catalogAlbum.findMany({
+      const coddrivealbum = await this.prisma.catalogAlbum.findFirst({
         where: {
           fkalbum: albumId,
         },

@@ -7,10 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// datasource db {
-//   provider = "sqlite"
-//   url      = "file:dev.db"
-// }
+//datasource db {
+// provider = "sqlite"
+//url      = "file:dev.db"
+//}
 
 model utilizador {
   codutilizador Int            @id @default(autoincrement())
@@ -23,16 +23,18 @@ model utilizador {
 model album {
   codalbum     Int            @id @default(autoincrement())
   nome         String         @unique
+  access_token String         @default("none")
+  id_token     String         @default("none")
   catalogAlbum catalogAlbum[]
 }
 
 model catalogAlbum {
   codcatalogo   Int    @id @default(autoincrement())
-  coddrive      String @unique
+  coddrive      String
   fkutilizador  Int?
   fkalbum       Int?
   url           String
-  coddrivealbum String @unique
+  coddrivealbum String
 
   utilizador utilizador? @relation(fields: [fkutilizador], references: [codutilizador])
   album      album?      @relation(fields: [fkalbum], references: [codalbum])
