@@ -80,7 +80,13 @@ O projeto utiliza variáveis de ambiente para configuração:
 - `YOUR_CLIENT_SECRET` - Segredo do cliente para autenticação Google
 - `YOUR_REDIRECT_URL` - URL de redirecionamento para autenticação Google
 
-## Instalação e Execução
+## Pré-requisitos
+
+- Node.js 14+
+- PostgreSQL 12+
+- NPM ou Yarn
+
+## Instalação
 
 1. Clone o repositório:
 ```bash
@@ -91,9 +97,15 @@ cd ps-fotos-api
 2. Instale as dependências:
 ```bash
 npm install
+# ou
+yarn install
 ```
 
-3. Configure o arquivo .env com suas credenciais de banco de dados e Google API.
+3. Configure o arquivo .env com suas credenciais de banco de dados e Google API:
+```bash
+cp .env.example .env
+# Edite o arquivo .env com suas configurações
+```
 
 4. Execute as migrações do Prisma:
 ```bash
@@ -103,6 +115,8 @@ npx prisma migrate dev
 5. Inicie o servidor:
 ```bash
 npm run start:dev
+# ou
+npm run dev
 ```
 
 ## Scripts Disponíveis
